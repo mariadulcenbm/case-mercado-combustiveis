@@ -1,6 +1,6 @@
 # Case - Mercado de Combustíveis | Aliança S.A.
 
-Este repositório contém a solução para o case de dados da 4intelligence.
+Este repositório contém a solução para o case de dados de combustíveis.
 
 ## Estrutura:
 

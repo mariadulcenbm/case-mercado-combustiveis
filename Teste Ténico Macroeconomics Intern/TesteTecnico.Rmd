@@ -1,0 +1,209 @@
+---
+title: "Teste Técnico | Macroeconomics Intern | MARIA DULCE NAVARRO DE BRITTO MATOS"
+author: "Maria Dulce Matos"
+date: "2025-06-13"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Introdução 
+
+## Instalar as bibliotecas necessárias
+
+```{r}
+#install.packages("readxl")
+#install.packages("dplyr")
+#install.packages("ggplot2")
+#install.packages("lubridate")
+#install.packages("tidyr")
+#install.packages("scales")
+```
+
+## Carregar as bibliotecas
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(tidyr)
+library(scales)
+```
+
+## Importar os dados 
+
+```{r}
+# Importar os dados
+# Importar as três abas
+diesel <- read_excel("/Users/mariadulcematos/Downloads/vendas_distribuidoras_anp 1 (4).xlsx", sheet = "diesel")
+gasolina <- read_excel("/Users/mariadulcematos/Downloads/vendas_distribuidoras_anp 1 (4).xlsx", sheet = "gasolina")
+etanol <- read_excel("/Users/mariadulcematos/Downloads/vendas_distribuidoras_anp 1 (4).xlsx", sheet = "etanol")
+```
+
+## Transformar cada base de formato largo para formato longo
+
+```{r}
+diesel_long <- diesel %>%
+  pivot_longer(cols = starts_with("200"), names_to = "Ano", values_to = "Volume") %>%
+  mutate(tipo_combustivel = "Diesel")
+```
+
+```{r}
+gasolina_long <- gasolina %>%
+  pivot_longer(cols = starts_with("200"), names_to = "Ano", values_to = "Volume") %>%
+  mutate(tipo_combustivel = "Gasolina")
+```
+
+```{r}
+etanol_long <- etanol %>%
+  pivot_longer(cols = starts_with("200"), names_to = "Ano", values_to = "Volume") %>%
+  mutate(tipo_combustivel = "Etanol")
+```
+
+```{r}
+# Combinar todas as bases
+dados <- bind_rows(diesel_long, gasolina_long, etanol_long)
+```
+
+```{r}
+# Juntas todos os dados
+# Diesel
+diesel_long <- diesel %>%
+  pivot_longer(cols = `2000`:`2020`, names_to = "Ano", values_to = "Volume") %>%
+  mutate(tipo_combustivel = "Diesel")
+
+# Gasolina
+gasolina_long <- gasolina %>%
+  pivot_longer(cols = `2000`:`2020`, names_to = "Ano", values_to = "Volume") %>%
+  mutate(tipo_combustivel = "Gasolina")
+
+# Etanol
+etanol_long <- etanol %>%
+  pivot_longer(cols = `2000`:`2020`, names_to = "Ano", values_to = "Volume") %>%
+  mutate(tipo_combustivel = "Etanol")
+```
+
+```{r}
+# Consertar coluna "2016"
+colunas_anos <- c(as.character(2000:2021))
+```
+
+
+```{r}
+# Tudo em um único dataframe
+dados <- bind_rows(diesel_long, gasolina_long, etanol_long)
+```
+
+```{r}
+# Criar coluna Ano + Mês
+dados <- dados %>%
+  mutate(Ano = as.numeric(Ano),
+         data = as.Date(paste(Ano, meses, "01", sep = "-"), format="%Y-%m-%d"))
+```
+
+
+## Visualização dos dados 
+
+```{r}
+head(dados)
+str(dados)
+colnames(dados)
+```
+
+# Análise
+
+## Gráfico 1 - Sazonalidade das vendas por mês por tipo de combustível
+
+```{r}
+# Sazonalidade das vendas por mês, por tipo de combustível
+dados %>%
+  group_by(meses, tipo_combustivel) %>%
+  summarise(venda_total = sum(Volume, na.rm = TRUE)) %>%
+  mutate(meses = factor(meses, levels = 1:12, labels = c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+                                                          "Jul", "Ago", "Set", "Out", "Nov", "Dez"))) %>%
+  ggplot(aes(x = meses, y = venda_total, color = tipo_combustivel, group = tipo_combustivel)) +
+  geom_line() +
+  theme_minimal() +
+  labs(title = "Sazonalidade das Vendas de Combustíveis",
+       x = "Mês",
+       y = "Volume Total (m³)") +
+  scale_y_continuous(labels = scales::comma)
+```
+
+## Gráfico 2 - Distribuição de consumo por estado
+
+```{r}
+dados %>%
+  group_by(regiao, tipo_combustivel) %>%
+  summarise(venda_total = sum(Volume, na.rm = TRUE)) %>%
+  ggplot(aes(x = regiao, y = venda_total, fill = tipo_combustivel)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Distribuição de Vendas por Estado e Tipo de Combustível",
+       x = "Estado (UF)",
+       y = "Volume Total (m³)") +
+  scale_y_continuous(labels = scales::comma) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+## Gráfico 3 - Evolução nos últimos 5 anos 
+
+```{r}
+dados %>%
+  filter(Ano >= 2016 & Ano <= 2020) %>%
+  group_by(Ano) %>%
+  summarise(venda_total = sum(Volume, na.rm = TRUE)) %>%
+  ggplot(aes(x = Ano, y = venda_total)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Evolução do Mercado de Combustíveis (2016-2020)",
+       x = "Ano",
+       y = "Volume Total (m³)") +
+  scale_y_continuous(labels = scales::comma)
+```
+
+# Pergunta 1 
+
+## Qual é a sazonalidade da venda de combustíveis?
+
+  Diesel: Apresenta um crescimento progressivo ao longo do ano, com picos concentrados entre agosto e novembro. Isso pode refletir o aumento de atividades logísticas e agrícolas no segundo semestre.
+  Gasolina: Tem um comportamento mais estável ao longo dos meses, com uma leve elevação em dezembro, possivelmente ligada a aumento de viagens e deslocamentos no período de férias.
+  Etanol: Também cresce ao longo do segundo semestre, com pico em outubro e dezembro. Esse padrão pode estar relacionado tanto à produção (safra de cana-de-açúcar) quanto a variações de preço que incentivam a substituição da gasolina pelo etanol em alguns meses.
+  Com base na análise do gráfico de sazonalidade, podemos recomendar para a distribuidora Aliança S.A. que prepare a sua logística para atender um aumento de demanda no segundo semestre, principalmente no caso do diesel.
+
+## Essa sazonalidade é igual em todos os estados? 
+
+  A sazonalidade não é igual em todos os estados. A análise da distribuição de vendas por estado mostra diferenças significativas no volume total consumido por UF. O estado de São Paulo, por exemplo, tem grande participação nas vendas de etanol e gasolina, enquanto estados como Goiás e Minas Gerais também apresentam participação relevante.
+  Além disso, a presença da linha "BR" (dados agregados do Brasil) indica que olhar apenas o total nacional mascara as particularidades estaduais.
+  Um exemplo de variação regional seria, por exemplo: enquanto estados do Sudeste e Centro-Oeste têm forte sazonalidade em etanol (pela produção de cana e políticas de preço), regiões como Norte e Nordeste podem ter sazonalidade mais pronunciada no diesel, ligado a transporte de mercadorias por longas distâncias.
+
+## Como o consumo de cada tipo de combustível está distribuído entre os estados brasileiros?
+
+  Diesel: Alta concentração em São Paulo, Minas Gerais e no total Brasil (linha "BR"). Goiás, Pará e Mato Grosso também aparecem com volumes relevantes.
+  Gasolina: Liderança em São Paulo, seguido por Minas Gerais e Paraná. Estados com grande frota de veículos leves têm maior consumo.
+  Etanol: Fortemente concentrado em São Paulo, Goiás e Minas Gerais, o que reflete a localização geográfica da produção de etanol no Brasil.
+  Ou seja, a distribuição é bastante desigual entre os estados e segue o perfil de produção, infraestrutura de transporte e frota de veículos de cada região.
+
+## Qual é o tamanho total do mercado e como ele evoluiu durante os últimos 5 anos?
+
+  O Gráfico 3 mostra um crescimento constante entre 2016 e 2019, com aumento acumulado de aproximadamente 6% no período. Podemos observar, também, uma queda acentuada em 2020, com uma redução significativa no volume vendido em comparação com 2019. Isso pode ser explicado pelos impactos diretos da pandemia do Covid-19, que causou a redução na mobilidade urbana, queda nas atividades econômicas, menor circulação de veículos e menos transporte de cargas.
+  Já em relação ao tamanho do mercado, nos últimos anos, o mercado nacional de combustíveis operou na faixa de 172 a 182 milhões de metros cúbicos/ano.
+
+# Pergunta 2
+
+## Quais são as características econômicas de um município que estão por trás de um consumo elevado de combustível e quais são os aspectos municipais que explicam uma necessidade menor de abastecimento? Explique detalhadamente os conceitos econômicos por trás da sua argumentação.
+
+  O consumo de combustíveis nos municípios brasileiros reflete não apenas variáveis conjunturais, mas também profundas características estruturais de nossa formação econômica. Como destacava Celso Furtado, a infraestrutura de transporte e os padrões espaciais de produção e consumo no Brasil são resultado de um processo histórico de desenvolvimento desigual e combinado, com forte concentração industrial e de serviços no Sudeste e Centro-Oeste, enquanto outras regiões mantiveram padrões produtivos mais primários.
+  Um dos principais determinantes do consumo elevado de combustíveis é o tamanho e a composição setorial do Produto Interno Bruto (PIB) local. Municípios com maior peso industrial ou agrícola em seu PIB tendem a apresentar maior demanda por diesel, tanto para movimentação de cargas quanto para processos produtivos. Dados do IBGE sobre o PIB Municipal mostram que cidades como Paulínia-SP e Uberlândia-MG, com forte presença industrial e logística, historicamente consomem volumes muito superiores à média nacional.
+  Além da estrutura econômica, a população é outro fator chave. Municípios com grande número de habitantes naturalmente concentram mais veículos, transporte público e deslocamentos urbanos. Segundo as estimativas populacionais do IBGE (2023), cidades como São Paulo, Belo Horizonte e Salvador, por exemplo, têm uma demanda contínua por gasolina e etanol para suprir o transporte de milhões de pessoas diariamente.
+  A frota de veículos, detalhada na base da Senatran, traduz de forma direta essa relação. Municípios com maior frota de caminhões têm consumo elevado de diesel, enquanto aqueles com grande número de carros de passeio têm maior demanda por gasolina e etanol. Um exemplo ilustrativo é o estado do Mato Grosso, onde a frota de caminhões por habitante é uma das mais altas do país, impulsionando o consumo de diesel para escoamento da produção agrícola.
+  Outro determinante importante é o perfil do emprego formal, captado pela RAIS. Municípios com grande concentração de empregos industriais ou de transporte/logística geram maior necessidade de deslocamentos casa-trabalho e transporte de mercadorias. A atividade econômica registrada no setor secundário, por exemplo, tem relação direta com a movimentação de cargas.
+  No caso da agricultura, os dados da Pesquisa Agrícola Municipal (PAM) do IBGE ajudam a identificar municípios com produção significativa de grãos, cana-de-açúcar e outras culturas que exigem uso intensivo de máquinas e transporte de grandes volumes, ampliando o consumo de diesel durante o calendário agrícola.
+  No campo industrial, a Pesquisa Industrial Anual (PIA) permite mapear o porte e a diversidade da produção manufatureira local, o que também impacta a demanda por combustíveis. Municípios com polos petroquímicos, siderúrgicos ou alimentícios apresentam padrões específicos de consumo.
+  Adicionalmente, é impossível dissociar essa análise de um olhar histórico e crítico sobre a formação da infraestrutura de transportes no Brasil. Como apontou Nathaniel Leff, nas décadas de 1930 a 1960, houve uma tentativa fracassada de ampliar a malha ferroviária como forma de diversificação modal. No entanto, o modelo acabou se consolidando em torno do transporte rodoviário, com forte dependência de combustíveis fósseis. Essa decisão histórica, somada à urbanização desordenada e à concentração da produção em alguns polos, criou uma estrutura logística que ainda hoje se reflete nos padrões de consumo de combustíveis.
+  Além das características estruturais, é importante reconhecer que choques conjunturais também têm forte influência sobre o consumo e a logística de combustíveis. Um exemplo emblemático foi a greve dos caminhoneiros de 2018, que paralisou o transporte rodoviário por quase duas semanas e gerou escassez de combustíveis em diversas regiões do país. Esse episódio evidenciou a vulnerabilidade da matriz logística brasileira, excessivamente dependente do modal rodoviário e, portanto, de combustíveis fósseis. A greve também reforçou a importância de políticas de diversificação modal e planejamento estratégico de estoques para garantir maior resiliência na cadeia de distribuição.
+  Por fim, é importante destacar que o consumo reduzido de combustíveis em determinados municípios não significa apenas baixa atividade econômica. Muitas vezes reflete menor densidade populacional, baixo grau de urbanização, carência de infraestrutura rodoviária ou perfil produtivo mais voltado para atividades de subsistência, com menor integração às cadeias nacionais de produção e distribuição.
+  Para a Aliança S.A., compreender essa multiplicidade de fatores é essencial. Uma abordagem que integre variáveis como PIB setorial, frota, produção agrícola, emprego formal e população permitiria desenvolver modelos preditivos mais robustos para a alocação eficiente de recursos logísticos e expansão comercial.
+  

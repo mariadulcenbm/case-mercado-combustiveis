@@ -6,7 +6,7 @@ Este repositório contém a solução para o case de dados de combustíveis.
 
 - **/codigo/** → Código completo em R Markdown (.Rmd)
 - **/data/** → Base de dados original (arquivo .xlsx fornecido pela ANP)
-- **/output/** → Relatório final gerado (HTML)
+- **/output/** → Relatório final gerado (.pdf)
 
 ## Observação:
 
